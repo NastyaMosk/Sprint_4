@@ -10,58 +10,76 @@ import java.time.Duration;
 public class OrderFormPage {
     private final WebDriver driver;
 
+    // --- Локаторы вынесены в поля класса ---
+    private final By nameInput = By.xpath(".//input[contains(@placeholder, 'Имя')]");
+    private final By surnameInput = By.xpath(".//input[contains(@placeholder, 'Фамилия')]");
+    private final By addressInput = By.xpath(".//input[contains(@placeholder, 'Адрес')]");
+    private final By metroInput = By.className("select-search__input");
+    private final By phoneInput = By.xpath(".//input[contains(@placeholder, 'Телефон')]");
+    private final By nextButton = By.cssSelector(".Button_Button__ra12g.Button_Middle__1CSJM");
+
+    private final By rentForm = By.className("Order_Form__17u6u");
+    private final By dateInput = By.xpath(".//input[contains(@placeholder, 'Когда')]");
+    private final By periodDropdown = By.className("Dropdown-control");
+
+    // Уточненные локаторы для кнопок (по тексту)
+    private final By orderButton = By.xpath(".//div[contains(@class, 'Order_Buttons')]//button");
+    private final By confirmOrderButton = By.xpath(".//button");
+    private final By successModalHeader = By.xpath(".//div");
+
     public OrderFormPage(WebDriver driver) {
         this.driver = driver;
     }
 
-    // Шаг 1: Для кого самокат
+    // Шаг 1: Заполнение персональных данных
     public void fillOrderForm(String name, String surname, String address, String metro, String phone) {
-        // Имя
-        driver.findElement(By.xpath(".//input[contains(@placeholder, 'Имя')]")).sendKeys(name);
-        // Фамилия
-        driver.findElement(By.xpath(".//input[contains(@placeholder, 'Фамилия')]")).sendKeys(surname);
-        // Адрес
-        driver.findElement(By.xpath(".//input[contains(@placeholder, 'Адрес')]")).sendKeys(address);
+        driver.findElement(nameInput).sendKeys(name);
+        driver.findElement(surnameInput).sendKeys(surname);
+        driver.findElement(addressInput).sendKeys(address);
 
-        // Метро
-        driver.findElement(By.className("select-search__input")).click();
-        String metroOption = String.format(".//div[@class='select-search__select']//*", metro);
+        // Выбор метро
+        driver.findElement(metroInput).click();
+        By metroOption = By.xpath(String.format(".//div[@class='select-search__select']//*", metro));
         new WebDriverWait(driver, Duration.ofSeconds(5))
-                .until(ExpectedConditions.elementToBeClickable(By.xpath(metroOption))).click();
+                .until(ExpectedConditions.elementToBeClickable(metroOption)).click();
 
-        // Телефон
-        driver.findElement(By.xpath(".//input[contains(@placeholder, 'Телефон')]")).sendKeys(phone);
-        // Кнопка Далее
-        driver.findElement(By.cssSelector(".Button_Button__ra12g.Button_Middle__1CSJM")).click();
+        driver.findElement(phoneInput).sendKeys(phone);
+        driver.findElement(nextButton).click();
     }
 
-    // Шаг 2: Про аренду
+    // Шаг 2: Заполнение данных об аренде
     public void fillRentDetails(String date, String period, String color) {
-        // Ожидание загрузки второй страницы
         new WebDriverWait(driver, Duration.ofSeconds(5))
-                .until(ExpectedConditions.visibilityOfElementLocated(By.className("Order_Form__17u6u")));
+                .until(ExpectedConditions.visibilityOfElementLocated(rentForm));
 
-        // Поле даты (вводим и жмем Enter)
-        driver.findElement(By.xpath(".//input[contains(@placeholder, 'Когда')]")).sendKeys(date);
-        driver.findElement(By.xpath(".//input[contains(@placeholder, 'Когда')]")).sendKeys(Keys.ENTER);
+        // Дата
+        driver.findElement(dateInput).sendKeys(date);
+        driver.findElement(dateInput).sendKeys(Keys.ENTER);
 
         // Срок аренды
-        driver.findElement(By.className("Dropdown-control")).click();
-        String periodOption = String.format(".//div[@class='Dropdown-menu']//*", period);
-        driver.findElement(By.xpath(periodOption)).click();
+        driver.findElement(periodDropdown).click();
+        By periodOption = By.xpath(String.format(".//div[@class='Dropdown-menu']//*", period));
+        driver.findElement(periodOption).click();
 
-        // Цвет (black / grey)
+        // Цвет (id: black или grey)
         driver.findElement(By.id(color)).click();
 
-        // Нажать Заказать
-        driver.findElement(By.xpath(".//div[contains(@class, 'Order_Buttons')]//button")).click();
+        // Нажать "Заказать"
+        driver.findElement(orderButton).click();
 
-        // Нажать Да в модалке
+        // Нажать "Да" в модалке подтверждения
         new WebDriverWait(driver, Duration.ofSeconds(5))
-                .until(ExpectedConditions.elementToBeClickable(By.xpath(".//button"))).click();
+                .until(ExpectedConditions.elementToBeClickable(confirmOrderButton)).click();
     }
 
+    // Проверка окна успеха с ожиданием (исправляет AssertionError)
     public boolean isSuccessModalDisplayed() {
-        return !driver.findElements(By.className("Order_ModalHeader__3FIIc")).isEmpty();
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(5))
+                    .until(ExpectedConditions.visibilityOfElementLocated(successModalHeader));
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

@@ -1,7 +1,10 @@
 package tests;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.openqa.selenium.WebDriver;
@@ -9,6 +12,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import pageobjects.MainPage;
 import pageobjects.OrderFormPage;
+
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -30,7 +34,8 @@ public class OrderFlowTest {
         this.phone = phone;
     }
 
-    @Parameterized.Parameters
+    // Исправлено: добавлено имя для информативности отчетов
+    @Parameterized.Parameters(name = "Тестовые данные: браузер {0}, кнопка сверху {1}, имя {2}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
                 {"chrome", true, "Иван", "+79991234567"},
@@ -40,14 +45,17 @@ public class OrderFlowTest {
 
     @Before
     public void setUp() {
-        if (browser.equals("chrome")) {
+        if ("chrome".equalsIgnoreCase(browser)) {
             WebDriverManager.chromedriver().setup();
             driver = new ChromeDriver();
         } else {
             WebDriverManager.firefoxdriver().setup();
             driver = new FirefoxDriver();
         }
-        driver.get("https://qa-scooter.praktikum-services.ru/");
+
+        // Исправлено: URL берется из константы в MainPage
+        driver.get(MainPage.URL);
+
         mainPage = new MainPage(driver);
         orderFormPage = new OrderFormPage(driver);
     }
@@ -55,6 +63,7 @@ public class OrderFlowTest {
     @Test
     public void testOrderFlow() {
         mainPage.clickCookieButton();
+
         if (useTopButton) {
             mainPage.clickOrderButtonTop();
         } else {
@@ -67,13 +76,8 @@ public class OrderFlowTest {
         Assert.assertTrue("Окно успеха не появилось", orderFormPage.isSuccessModalDisplayed());
     }
 
-    @Test
-    public void testAccordion() {
-        mainPage.clickCookieButton();
-        mainPage.clickAccordionQuestion(0);
-        String text = mainPage.getAccordionAnswerText(0);
-        Assert.assertNotNull("Текст ответа не найден", text);
-    }
+    // Замечание ревьюера: тест аккордеона удален отсюда.
+    // Его необходимо создать в отдельном классе AccordionTest.java с собственной параметризацией.
 
     @After
     public void tearDown() {
